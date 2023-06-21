@@ -19,20 +19,26 @@ const messages: ChatCompletionRequestMessage[] = [
   {
     role: "user",
     content:
-      'What is the list of mealWheel dishes for the mealWheel user whose name is crapshack?',
+      // 'What is the list of mealWheel dishes for the mealWheel user whose name is crapshack?',
+      // "What would be a good meal to prepare that is similar to Spaghetti Carbonara?");
+      `
+        First, get the mealWheel user whose mealWheel name is crapshack.
+        Then, get the list of mealWheel main dish for that mealWheel user.
+        Finally, suggest a meal that is similar to the specified random meal.
+      `,
   },
 ];
 
 const functions = [
   {
     name: "getMealWheelUserId",
-    description: "Get a mealWheel user id given a mealWheel user name",
+    description: "Get a mealWheel user given a mealWheel name",
     parameters: {
       type: "object",
       properties: {
         name: {
           type: "string",
-          description: "The name of the mealWheel user",
+          description: "The mealWheel name",
         },
       },
       required: ["name"],
@@ -40,16 +46,16 @@ const functions = [
   },
   {
     name: "getMealWheelMainDishes",
-    description: "List the mealWheel dishes given a mealWheel user id",
+    description: "List the mealWheel dishes given a mealWheel user",
     parameters: {
       type: "object",
       properties: {
         userId: {
           type: "string",
-          description: "The id of the mealWheel user",
+          description: "The mealWheel user",
         },
       },
-      required: ["id"],
+      required: ["userId"],
     }
   }
 ];
@@ -202,8 +208,6 @@ async function run_conversation() {
     function_arguments = chatFunctionCall.function_arguments;
 
     let x = JSON.parse(function_arguments);
-    // console.log(x);
-    // console.log(x.userId);
     const userId = x.userId;
     console.log('userId: ', userId);
     console.log(typeof userId);
@@ -211,11 +215,8 @@ async function run_conversation() {
     const dishes: DishEntity[] = await getMealWheelMainDishes(userId);
     const dishIndex: number = getRandomInt(dishes.length);
     const randomDish: DishEntity = dishes[dishIndex];
-
-    // console.log('main dishes');
-    // dishes.forEach((dishEntity: DishEntity) => {
-    //   console.log(dishEntity.name);
-    // })
+    const randomDishName: string = randomDish.name;
+    console.log(randomDishName);
 
     return 'poo';
 
