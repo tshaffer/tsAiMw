@@ -1,4 +1,4 @@
-import { ChatCompletionRequestMessage, ChatCompletionRequestMessageFunctionCall, ChatCompletionResponseMessage, Configuration, CreateChatCompletionResponse, OpenAIApi } from "openai";
+import { ChatCompletionRequestMessage, ChatCompletionRequestMessageFunctionCall, ChatCompletionResponseMessage, Configuration, CreateChatCompletionResponse, CreateCompletionRequestPrompt, OpenAIApi } from "openai";
 import axios from 'axios';
 import 'dotenv/config';
 import { isNil } from 'lodash';
@@ -218,6 +218,27 @@ async function run_conversation() {
     const randomDishName: string = randomDish.name;
     console.log(randomDishName);
 
+    const prompt: CreateCompletionRequestPrompt = 'What would be a good meal to prepare that is similar to ' + randomDishName;
+    console.log('Get recommended meal using prompt:');
+    console.log(prompt);
+    let response = await openai.createChatCompletion({
+      model: "gpt-3.5-turbo-0613",
+      messages: [
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0,
+    });
+    let responseData: CreateChatCompletionResponse = response.data;
+    console.log('responseData');
+    console.log(responseData);
+
+    let response_messageRet: ChatCompletionResponseMessage | undefined = responseData["choices"][0]["message"];
+    if (isNil(response_messageRet)) { debugger };
+    let response_message = response_messageRet as ChatCompletionResponseMessage;
+    console.log('response_message');
+    console.log(response_message);
+  
     return 'poo';
 
   } else {
