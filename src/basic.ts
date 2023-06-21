@@ -236,9 +236,9 @@ async function run_conversation() {
     let response_messageRet: ChatCompletionResponseMessage | undefined = responseData["choices"][0]["message"];
     if (isNil(response_messageRet)) { debugger };
     let response_message = response_messageRet as ChatCompletionResponseMessage;
-    console.log('response_message');
-    console.log(response_message);
-  
+    console.log('openAI says');
+    console.log(response_message.content);
+
     return 'poo';
 
   } else {
