@@ -2,6 +2,7 @@ import { ChatCompletionRequestMessage, ChatCompletionRequestMessageFunctionCall,
 import axios from 'axios';
 import 'dotenv/config';
 import { isNil } from 'lodash';
+import { DishEntity, DishEntityFromServer } from "./types";
 
 interface ChatFunctionCall {
   function_name: string;
@@ -38,7 +39,7 @@ const functions = [
     },
   },
   {
-    name: "getMealWheelDishes",
+    name: "getMealWheelMainDishes",
     description: "List the mealWheel dishes given a mealWheel user id",
     parameters: {
       type: "object",
@@ -52,6 +53,10 @@ const functions = [
     }
   }
 ];
+
+function getRandomInt(max: number) {
+  return Math.floor(Math.random() * max);
+}
 
 async function getMealWheelUserId(name): Promise<string | undefined> {
   console.log(`Called getMealWheelUserId for user: `, name);
@@ -74,22 +79,53 @@ async function getMealWheelUserId(name): Promise<string | undefined> {
     });
 }
 
-async function getMealWheelDishes(userId): Promise<any[] | undefined> {
-  console.log('getMealWheelDishes for user id: ', userId);
+// async function getMealWheelDishes(userId): Promise<any[] | undefined> {
+//   console.log('getMealWheelDishes for user id: ', userId);
+
+//   const serverUrl = 'https://tsmealwheel.herokuapp.com';
+//   const apiUrlFragment = '/api/v1/';
+//   const path = serverUrl + apiUrlFragment + 'dishes?id=' + userId;
+
+//   return axios.get(path)
+//     .then((dishesResponse) => {
+//       const dishEntitiesFromServer = dishesResponse.data;
+//       console.log('number of dishes: ', dishEntitiesFromServer.length);
+//       // console.log(typeof dishEntitiesFromServer);
+//       // console.log(dishEntitiesFromServer);
+//       return [];
+//     });
+
+// }
+
+async function getMealWheelMainDishes(userId): Promise<DishEntity[]> {
+  console.log('getMealWheelMainDishes for user id: ', userId);
 
   const serverUrl = 'https://tsmealwheel.herokuapp.com';
   const apiUrlFragment = '/api/v1/';
   const path = serverUrl + apiUrlFragment + 'dishes?id=' + userId;
 
   return axios.get(path)
-    .then((dishesResponse) => {
-      const dishEntitiesFromServer = dishesResponse.data;
-      console.log('number of dishes: ', dishEntitiesFromServer.length);
-      // console.log(typeof dishEntitiesFromServer);
-      // console.log(dishEntitiesFromServer);
-      return [];
+    .then((dishesResponse: any) => {
+      const mainDishes: DishEntity[] = [];
+      const dishEntitiesFromServer: DishEntityFromServer[] = (dishesResponse as any).data;
+      for (const dishEntityFromServer of dishEntitiesFromServer) {
+        if (dishEntityFromServer.type === 'main') {
+          const dishEntity: DishEntity = {
+            id: dishEntityFromServer.id,
+            name: dishEntityFromServer.name,
+            type: dishEntityFromServer.type,
+            minimumInterval: dishEntityFromServer.minimumInterval,
+            last: isNil(dishEntityFromServer.last) ? null : new Date(dishEntityFromServer.last!),
+            suggestedAccompanimentTypeSpecs: !isNil(dishEntityFromServer.suggestedAccompanimentTypeSpecs) ? dishEntityFromServer.suggestedAccompanimentTypeSpecs : [],
+            prepEffort: dishEntityFromServer.prepEffort,
+            prepTime: dishEntityFromServer.prepTime,
+            cleanupEffort: dishEntityFromServer.cleanupEffort,
+          };
+          mainDishes.push(dishEntity);
+        }
+      }
+      return mainDishes;
     });
-
 }
 
 async function sendChat(): Promise<ChatFunctionCall> {
@@ -163,7 +199,7 @@ async function run_conversation() {
 
     chatFunctionCall = await sendChat();
     function_name = chatFunctionCall.function_name;
-    function_arguments = chatFunctionCall.function_arguments;  
+    function_arguments = chatFunctionCall.function_arguments;
 
     let x = JSON.parse(function_arguments);
     // console.log(x);
@@ -172,7 +208,14 @@ async function run_conversation() {
     console.log('userId: ', userId);
     console.log(typeof userId);
 
-    const dishes = await getMealWheelDishes(userId);
+    const dishes: DishEntity[] = await getMealWheelMainDishes(userId);
+    const dishIndex: number = getRandomInt(dishes.length);
+    const randomDish: DishEntity = dishes[dishIndex];
+
+    // console.log('main dishes');
+    // dishes.forEach((dishEntity: DishEntity) => {
+    //   console.log(dishEntity.name);
+    // })
 
     return 'poo';
 
@@ -182,15 +225,15 @@ async function run_conversation() {
 }
 
 export const run = async () => {
-run_conversation()
-  .then((response_message) => {
-    console.log('natural language final response');
-    // console.log(response_message.content);
-  })
-  .catch((error) => {
-    console.log('Failblog');
-    console.log(error);
-    // console.log(Object.keys(error));
-    // console.error("Error:", error);
-  });
+  run_conversation()
+    .then((response_message) => {
+      console.log('natural language final response');
+      // console.log(response_message.content);
+    })
+    .catch((error) => {
+      console.log('Failblog');
+      console.log(error);
+      // console.log(Object.keys(error));
+      // console.error("Error:", error);
+    });
 }
